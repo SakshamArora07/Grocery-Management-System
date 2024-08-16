@@ -1,203 +1,156 @@
+<?php
+session_start();
+include 'connect.php';
+
+// Ensure the user is logged in and is a customer
+if (!isset($_SESSION['username']) || $_SESSION['role'] != 'customer') {
+    header('Location: login.php');
+    exit();
+}
+
+// Initialize variables for search and sorting
+$search_query = "";
+$sort_order = "";
+
+// Handle search and sorting
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['search'])) {
+        $search_query = $_POST['search_query'];
+    }
+    if (isset($_POST['sort_order'])) {
+        $sort_order = $_POST['sort_order'];
+    }
+}
+
+// Build the query
+$query = "SELECT * FROM products WHERE name LIKE '%$search_query%'";
+if ($sort_order == "price_asc") {
+    $query .= " ORDER BY price ASC";
+} elseif ($sort_order == "price_desc") {
+    $query .= " ORDER BY price DESC";
+} elseif ($sort_order == "name_asc") {
+    $query .= " ORDER BY name ASC";
+} elseif ($sort_order == "name_desc") {
+    $query .= " ORDER BY name DESC";
+}
+
+$result = mysqli_query($conn, $query);
+
+// Get current cart quantities
+$cart_result = mysqli_query($conn, "SELECT product_id, quantity FROM cart WHERE user_id='{$_SESSION['user_id']}'");
+$cart_quantities = [];
+while ($cart_row = mysqli_fetch_assoc($cart_result)) {
+    $cart_quantities[$cart_row['product_id']] = $cart_row['quantity'];
+}
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
-<title>Grocery Store - Online Shopping</title>
-<!-- for-mobile-apps -->
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="keywords" content="Grocery Store Responsive web template, Bootstrap Web Templates, Flat Web Templates, Android Compatible web template, Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, SonyEricsson, Motorola web design" />
-<script type="application/x-javascript"> addEventListener("load", function() { setTimeout(hideURLbar, 0); }, false);
-    function hideURLbar(){ window.scrollTo(0,1); } </script>
-<!-- //for-mobile-apps -->
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all" />
-<link href="css/font-awesome.css" rel="stylesheet" type="text/css" media="all" /> 
-<!-- Google Fonts -->
-<link href='https://fonts.googleapis.com/css?family=Ubuntu:400,300,300italic,400italic,500,500italic,700,700italic' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic' rel='stylesheet' type='text/css'>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<!-- Bootstrap JS -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<!-- Custom CSS -->
-<style>
-    body {
-        background-color: #f4f8f4;
-        font-size: 100%;
-        font-family: 'Open Sans', sans-serif;
-    }
-    .agileits_header {
-        background-color: #28a745;
-        padding: 10px 0;
-    }
-    .agileits_header .button {
-        background-color: #fff;
-        border: 1px solid #28a745;
-        color: #28a745;
-        padding: 8px 15px;
-        border-radius: 4px;
-        margin-left: 10px;
-    }
-    .agileits_header .button:hover {
-        background-color: #28a745;
-        color: #fff;
-    }
-    .logo_products .w3ls_logo_products_left h1 a {
-        color: #28a745;
-        text-decoration: none;
-        font-size: 36px;
-        font-weight: 700;
-    }
-    .logo_products .w3ls_logo_products_left h1 a span {
-        color: #6c757d;
-    }
-    .products-breadcrumb {
-        background-color: #e9f7ef;
-        padding: 10px 0;
-    }
-    .products-breadcrumb ul {
-        list-style: none;
-        padding: 0;
-    }
-    .products-breadcrumb ul li h4 {
-        color: #28a745;
-        font-weight: 600;
-    }
-    .table thead {
-        background-color: #28a745;
-        color: #fff;
-    }
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    .btn-primary {
-        background-color: #28a745;
-        border: none;
-    }
-    .btn-primary:hover {
-        background-color: #218838;
-    }
-    .w3l_header_right ul {
-        list-style: none;
-        padding: 0;
-    }
-    .w3l_header_right ul li {
-        display: inline-block;
-        margin-right: 15px;
-    }
-    .w3l_header_right ul li a {
-        color: #fff;
-        text-decoration: none;
-        font-size: 16px;
-    }
-    .fixed {
-        position: fixed;
-        top: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-</style>
-<script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $(".scroll").click(function(event){        
-            event.preventDefault();
-            $('html,body').animate({scrollTop:$(this.hash).offset().top},1000);
-        });
-    });
-</script>
+    <title>All Products</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
-    
 <body>
-<!-- header -->
-    <div class="agileits_header">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div class="product_list_header">  
-                <form action="#" method="post" class="last">
-                    <fieldset>
-                        <input type="hidden" name="cmd" value="_cart" />
-                        <input type="hidden" name="display" value="1" />
-                        <a href="show_cart.php"><input type="button" value="View your cart" class="button" /></a>
-                        <a href="index.php"><input type="button" value="Home" class="button" /></a>
-                    </fieldset>
-                </form>
-            </div>
-            <div class="w3l_header_right">
-                <ul>
-                    <li><a href="logout.php">Logout</a></li>
-                </ul>
-            </div>
-        </div>
+    <div class="container" style="margin-top: 20px;">
+        <h2>All Products</h2>
+
+        <form method="POST" class="form-inline">
+            <input type="text" name="search_query" class="form-control mb-2 mr-sm-2" placeholder="Search Products" value="<?php echo $search_query; ?>">
+            <button type="submit" name="search" class="btn btn-primary mb-2">Search</button>
+
+            <select name="sort_order" class="form-control mb-2 ml-sm-2">
+                <option value="">Sort By</option>
+                <option value="price_asc" <?php if ($sort_order == "price_asc") echo "selected"; ?>>Price: Low to High</option>
+                <option value="price_desc" <?php if ($sort_order == "price_desc") echo "selected"; ?>>Price: High to Low</option>
+                <option value="name_asc" <?php if ($sort_order == "name_asc") echo "selected"; ?>>Name: A to Z</option>
+                <option value="name_desc" <?php if ($sort_order == "name_desc") echo "selected"; ?>>Name: Z to A</option>
+            </select>
+            <button type="submit" class="btn btn-secondary mb-2 ml-sm-2">Sort</button>
+        </form>
+
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Quantity in Cart</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = mysqli_fetch_assoc($result)): 
+                    $product_id = $row['id'];
+                    $quantity_in_cart = isset($cart_quantities[$product_id]) ? $cart_quantities[$product_id] : 0;
+                ?>
+                <tr>
+                    <td><?php echo $row['name']; ?></td>
+                    <td><?php echo $row['description']; ?></td>
+                    <td><?php echo $row['price']; ?></td>
+                    <td><?php echo $row['stock']; ?></td>
+                    <td id="quantity_<?php echo $product_id; ?>"><?php echo $quantity_in_cart; ?></td>
+                    <td>
+                        <button onclick="addToCart(<?php echo $product_id; ?>)" class="btn btn-primary">+</button>
+                        <button id="minus_<?php echo $product_id; ?>" onclick="removeFromCart(<?php echo $product_id; ?>)" class="btn btn-danger" <?php if ($quantity_in_cart == 0) echo 'disabled'; ?>>-</button>
+                    </td>
+                </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+
+        <a href="customer_home.php" class="btn btn-secondary">Back to Dashboard</a>
+        <a href="cart.php" class="btn btn-info">Go to My Cart</a>
+        <a href="order_history.php" class="btn btn-info">View Order History</a>
+        <a href="logout.php" class="btn btn-danger">Logout</a>
     </div>
-<!-- script-for sticky-nav -->
+
     <script>
-    $(document).ready(function() {
-         var navoffeset=$(".agileits_header").offset().top;
-         $(window).scroll(function(){
-            var scrollpos=$(window).scrollTop(); 
-            if(scrollpos >=navoffeset){
-                $(".agileits_header").addClass("fixed");
-            }else{
-                $(".agileits_header").removeClass("fixed");
-            }
-         });
-         
-    });
+        function addToCart(product_id) {
+            $.ajax({
+                type: "POST",
+                url: "add_to_cart.php",
+                data: { product_id: product_id },
+                success: function(response) {
+                    var data = JSON.parse(response);
+                    if (data.status === 'success') {
+                        $('#quantity_' + product_id).text(data.quantity);
+                        $('#minus_' + product_id).prop('disabled', false); // Enable the minus button
+                    } else if (data.status === 'out_of_stock') {
+                        alert('Out of stock!');
+                    }
+                }
+            });
+            return false; // Prevent the form from submitting the traditional way
+        }
+
+        function removeFromCart(product_id) {
+            console.log('removeFromCart called with product_id:', product_id);
+            $.ajax({
+                type: "POST",
+                url: "update_cart.php",
+                data: { product_id: product_id },
+                success: function(response) {
+                    console.log('AJAX success:', response);
+                    var data = JSON.parse(response);
+                    console.log('Parsed response:', data);
+                    if (data.status === 'success') {
+                        $('#quantity_' + product_id).text(data.quantity);
+                        if (data.quantity == 0) {
+                            $('#minus_' + product_id).prop('disabled', true); // Disable the minus button if quantity is zero
+                        }
+                    } else if (data.status === 'removed') {
+                        $('#quantity_' + product_id).text(0);
+                        $('#minus_' + product_id).prop('disabled', true); // Disable the minus button if the item is removed
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error: ' + status + error);
+                    console.log(xhr.responseText);
+                }
+            });
+        }
     </script>
-<!-- //script-for sticky-nav -->
-    <div class="logo_products">
-        <div class="container">
-            <div class="w3ls_logo_products_left">
-                <h1><a href="index.php"><span>Grocery</span> Store</a></h1>
-            </div>
-            <div class="clearfix"> </div>
-        </div>
-    </div>
-<!-- //header -->
-<!-- products-breadcrumb -->
-    <div class="products-breadcrumb">
-        <div class="container">
-            <ul>
-                <li><h4>All Products</h4></li>
-            </ul>
-        </div>
-    </div>
-    <div class="container mt-4">
-    <?php
-   $db="grocery";
-   $connect = mysqli_connect('localhost','root','',$db);
-   $query = mysqli_query($connect,"SELECT * FROM products");
-   
-   echo '<table class="table table-bordered table-striped">';
-   echo "<thead class='thead-dark'>";
-   echo "<tr>";
-   echo "<th scope='col'>Product ID</th>";
-   echo "<th scope='col'>Category</th>";
-   echo "<th scope='col'>Item Name</th>";
-   echo "<th scope='col'>Cost</th>";
-   echo "<th scope='col'>Available</th>";
-   echo "<th scope='col'>Cart</th>";
-   echo "</tr>";
-   echo "</thead>";
-   echo "<tbody>";
-   while ($row = mysqli_fetch_array ($query)) {
-      echo "<tr>";
-      echo "<td>" . $row["ID"] . "</td>";
-      echo "<td>" . $row["category"] . "</td>";
-      echo "<td>" . $row["Item_name"] . "</td>";
-      echo "<td>$" . $row["cost"] . "</td>";
-      echo "<td>Y</td>";
-      echo "<td><form action='add_to_cart.php' method='post' enctype='multipart/form-data'>
-        <input type='hidden' name='cpid' value='" . $row["ID"] . "'/>
-        <input type='hidden' name='ccost' value='" . $row["cost"] . "'/>
-        <input type='submit' name='submit' value='ADD' class='btn btn-primary'/>
-    </form></td>";
-      echo "</tr>";
-  }
-  echo "</tbody>";
-  echo "</table>";
-?>
-    </div>
-<!-- //products-breadcrumb -->
-<!-- banner -->
-    
 </body>
 </html>

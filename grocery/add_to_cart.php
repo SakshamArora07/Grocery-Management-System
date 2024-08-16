@@ -1,57 +1,41 @@
 <?php
+session_start();
+include 'connect.php';
 
-
-if(isset($_POST["submit"])){
-        $cpid= $_POST['cpid'];
-        $ccost = $_POST['ccost'];
-        //$item = $_POST['item'];
-        $database = "grocery";
-        $db = mysqli_connect('localhost','root','',$database);
-
-        $result = $db->query("SELECT count(1) FROM cart where pid=$cpid");
-        $row = mysqli_fetch_array($result);
-
-        $total = $row[0];
-
-
-        $count = "SELECT no_of_items from products where ID=$cpid";
-        $row2 = $db->query($count);
-        $row1 = mysqli_fetch_assoc($row2);
-        
-        if($row1['no_of_items']<1){
-            header('Location: products.php');
-        }
-        else{
-
-        if($total == 0 ){
-
-            $prd= "UPDATE products set no_of_items=no_of_items-1 where ID=$cpid";
-            $prd1= $db->query($prd);
-
-
-            $q = "INSERT INTO cart VALUES('',1,$cpid,1,$ccost)";
-            $insert = $db->query($q);
-        if($insert){
-            echo "File uploaded successfully.";
-            //header('Location: products.php');
-
-        }else{
-            echo "File upload failed, please try again.";
-        } 
-        }
-        else{
-            $prd= "UPDATE products set no_of_items=no_of_items-1 where ID=$cpid";
-            $prd1= $db->query($prd);
-
-            $q1= "UPDATE cart set no_of_items = no_of_items + 1 WHERE pid = $cpid";
-            $update = $db->query($q1);
-            //header('Location: products.php');
-        }
-    }
-    header('Location: products.php');
-?>
-<!-- }
-    <?php
+// Ensure the user is logged in
+if (!isset($_SESSION['username']) || !isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
 }
-?> -->
 
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $user_id = $_SESSION['user_id'];
+    $product_id = $_POST['product_id'];
+
+    // Get current stock level
+    $product_result = mysqli_query($conn, "SELECT stock FROM products WHERE id='$product_id'");
+    $product = mysqli_fetch_assoc($product_result);
+    $stock = $product['stock'];
+
+    // Get current quantity in cart
+    $cart_result = mysqli_query($conn, "SELECT quantity FROM cart WHERE user_id='$user_id' AND product_id='$product_id'");
+    $cart_item = mysqli_fetch_assoc($cart_result);
+
+    $current_quantity = isset($cart_item['quantity']) ? $cart_item['quantity'] : 0;
+
+    if ($current_quantity < $stock) {
+        if ($current_quantity > 0) {
+            // Update quantity if product already in cart
+            $new_quantity = $current_quantity + 1;
+            mysqli_query($conn, "UPDATE cart SET quantity = $new_quantity WHERE user_id='$user_id' AND product_id='$product_id'");
+        } else {
+            // Add new product to cart
+            mysqli_query($conn, "INSERT INTO cart (user_id, product_id, quantity) VALUES ('$user_id', '$product_id', 1)");
+            $new_quantity = 1;
+        }
+        echo json_encode(['status' => 'success', 'quantity' => $new_quantity]);
+    } else {
+        echo json_encode(['status' => 'out_of_stock']);
+    }
+}
+?>

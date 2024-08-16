@@ -1,181 +1,82 @@
-create database `grocery`;
-use `grocery`;
+-- Simplified Grocery Store Database Schema
 
-CREATE TABLE `cart` (
-  `cart_id` int(11) NOT NULL,
-  `cid` int(10) NOT NULL,
-  `pid` int(10) NOT NULL,
-  `no_of_items` int(10) NOT NULL,
-  `cost_of_item` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE DATABASE IF NOT EXISTS grocery;
+USE grocery;
 
+-- Table for Users (Customers and Employees)
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role ENUM('customer', 'employee') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-DELIMITER $$
-CREATE TRIGGER `delete` BEFORE DELETE ON `cart` FOR EACH ROW BEGIN
-	insert into purchase(pcid,ppid,no_of_items,cost_of_items,date_time) VALUES(old.cid,old.pid,old.no_of_items,old.no_of_items*old.cost_of_item,now());
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `insert1` AFTER INSERT ON `cart` FOR EACH ROW BEGIN
-	update products set no_of_items=no_of_items-1 where ID=new.pid; 
-    
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `update1` AFTER UPDATE ON `cart` FOR EACH ROW BEGIN
-	update products set no_of_items=no_of_items-1 where ID=old.pid;
-end
-$$
-DELIMITER ;
+-- Table for Products
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    stock INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+-- Insert sample products
+INSERT INTO products (name, description, price, stock) VALUES
+('Apple', 'Red Apple', 10, 100),
+('Banana', 'Yellow Banana', 8, 150),
+('Orange', 'Juicy Orange', 9, 120),
+('Milk', '1L Amul Milk', 15, 50),
+('Bread', 'Whole Wheat Bread', 15, 50),
+('Eggs', 'White Eggs', 7, 100),
+('Chicken', '1kg Chicken Breast', 20, 50),
+('Rice', '1kg Basmati Rice', 30, 40),
+('Pasta', '500g Italian Pasta', 24, 75),
+('Tomato', 'Red Tomato', 15, 130),
+('Potato', 'Brown Potatoes', 12, 140),
+('Onion', 'Purple Onions', 10, 110),
+('Carrot', 'Orange Carrots', 12, 90),
+('Cheese', '200g Cheddar Cheese', 30, 60),
+('Butter', '200g Amul Butter', 10, 70),
+('Yogurt', '500g Amul Yogurt', 30, 80),
+('Juice', '1 Liter Orange Juice', 30, 100),
+('Cereal', '500g Kellogs Cereal', 45, 40),
+('Tea', '100g Green Tea', 20, 50),
+('Coffee', '200g Ground Coffee', 45, 60);
 
+-- Table for Cart
+CREATE TABLE IF NOT EXISTS cart (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    product_id INT,
+    quantity INT DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
 
-CREATE TABLE `customer` (
-  `ID` int(10) NOT NULL,
-  `user` varchar(20) NOT NULL,
-  `password` varchar(20) NOT NULL,
-  `phone_no` bigint(10) NOT NULL,
-  `Time_of_join` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+-- Table for Transactions
+CREATE TABLE IF NOT EXISTS transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
+-- Table for Transaction Details (Items Purchased)
+CREATE TABLE IF NOT EXISTS transaction_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transaction_id INT,
+    product_id INT,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
 
-
-INSERT INTO `customer` (`ID`, `user`, `password`, `phone_no`, `Time_of_join`) VALUES
-(1, 'Test1', 'abc', 1234567890, '2023-03-28 11:39:37'),
-(2, 'Test2', 'def', 9876543211, '2023-03-28 11:34:12'),
-(3, 'Test3', 'ghi', 9876543212, '2023-03-28 11:56:59');
-
-
-
-CREATE TABLE `employee` (
-  `e_username` varchar(20) NOT NULL,
-  `e_password` varchar(20) NOT NULL,
-  `e_phone_no` bigint(10) NOT NULL,
-  `e_date_join` datetime NOT NULL,
-  `eid` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-INSERT INTO `employee` (`e_username`, `e_password`, `e_phone_no`, `e_date_join`, `eid`) VALUES
-('Saksham', 'Arora', 9999999999, '2023-05-11 12:58:52', 1),
-
-
-
-
-CREATE TABLE `products` (
-  `ID` int(10) NOT NULL,
-  `category` varchar(20) NOT NULL,
-  `Item_name` varchar(30) NOT NULL,
-  `cost` int(10) NOT NULL,
-  `no_of_items` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-INSERT INTO `products` (`ID`, `category`, `Item_name`, `cost`, `no_of_items`) VALUES
-(1, 'Households', 'Air Freshener', 90, 1000),
-(2, 'Kitchen', 'Sugar', 25, 1000),
-(3, 'Groceries', 'Beverages', 10, 1000),
-(4, 'Vegetables', 'Potato', 20, 1000),
-(5, 'Fruits', 'Apple', 180, 1000),
-(6, 'Dairy', 'Milk', 46, 1000),
-(7, 'Staples', 'Pulses',80,1000),
-(8, 'Snacks', 'Maggie' , 45, 1000),
-(9, 'HomeCare' ,'Detergent', 90, 1000),
-(10, 'PersonalCare' ,'BodyWash', 160 , 1000),
-(11, 'BabyCare', 'Diaper', 100, 1000),
-(12, 'Disposable','GarbageBags', 70,1000),
-(13, 'Furnishing','Carpets',200,1000),
-(14, 'HomeDecor','Artwork',500,1000),
-(15, 'SpiritualNeeds', 'Agarbatti',60,1000),
-(16, 'Electronics', 'Phone',25000,100),
-(17, 'HomeApplicances','Fans',100,1000),
-(18, 'Gaming', 'GamingConsole',100,1000),
-(19, 'Beauty', 'Makeup',100,1000),
-(20, 'Fitness', 'Vitamins and Supplements',100,1000);
-
-
-
-CREATE TABLE `purchase` (
-  `pcid` int(10) NOT NULL,
-  `ppid` int(10) NOT NULL,
-  `no_of_items` int(10) NOT NULL,
-  `cost_of_items` int(10) NOT NULL,
-  `date_time` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
-INSERT INTO `purchase` (`pcid`, `ppid`, `no_of_items`, `cost_of_items`, `date_time`) VALUES
-(1, 4, 1, 40, '2023-04-27 15:00:02'),
-(1, 2, 1, 40, '2023-04-27 15:00:02'),
-(1, 4, 3, 120, '2023-04-27 15:04:48'),
-(1, 1, 1, 50, '2023-04-27 15:04:48'),
-(1, 2, 1, 40, '2023-04-27 15:04:48'),
-(1, 1, 2, 100, '2023-04-27 18:42:38'),
-(1, 2, 1, 40, '2023-04-27 18:42:39'),
-(2, 1, 1, 50, '2023-04-27 18:47:42'),
-(2, 2, 1, 40, '2023-04-27 18:47:42'),
-(2, 4, 2, 80, '2023-04-27 19:23:21'),
-(1, 4, 7, 280, '2023-04-28 01:54:01'),
-(1, 2, 2, 18, '2023-04-28 16:45:24'),
-(1, 2, 2, 18, '2023-04-28 16:51:01');
-
-
-
-ALTER TABLE `cart`
-  ADD PRIMARY KEY (`cart_id`),
-  ADD KEY `fk_references_cart_customer` (`cid`),
-  ADD KEY `pid` (`pid`) USING BTREE;
-
-
-ALTER TABLE `customer`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD UNIQUE KEY `user` (`user`);
-
-
-ALTER TABLE `employee`
-  ADD PRIMARY KEY (`eid`),
-  ADD UNIQUE KEY `e_username` (`e_username`);
-
-
-ALTER TABLE `products`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `Item_name` (`Item_name`);
-
-
-ALTER TABLE `purchase`
-  ADD KEY `fk_references_purchase_customer` (`pcid`),
-  ADD KEY `fk_references_purchase_products` (`ppid`);
-
-
-ALTER TABLE `cart`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
-
-
-ALTER TABLE `customer`
-  MODIFY `ID` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
-
-ALTER TABLE `employee`
-  MODIFY `eid` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
-
-ALTER TABLE `products`
-  MODIFY `ID` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
-
-
-ALTER TABLE `cart`
-  ADD CONSTRAINT `fk_references_cart_customer` FOREIGN KEY (`cid`) REFERENCES `customer` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_references_cart_products` FOREIGN KEY (`pid`) REFERENCES `products` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
-
-ALTER TABLE `purchase`
-  ADD CONSTRAINT `fk_references_purchase_customer` FOREIGN KEY (`pcid`) REFERENCES `customer` (`ID`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_references_purchase_products` FOREIGN KEY (`ppid`) REFERENCES `products` (`ID`) ON DELETE NO ACTION ON UPDATE CASCADE;
-COMMIT;
-
-
+-- Sample Data for Testing
+INSERT INTO users (username, password, email, role) VALUES 
+('saksham', MD5('saksham'), 'saksham@saksham.com', 'customer'),
+('prerana', MD5('prerana'), 'prerana@prerana.com', 'employee');
