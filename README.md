@@ -5,13 +5,13 @@ The S-MART Grocery Management System is a comprehensive web application designed
 
 ## Features
 ### For Customers
-- **Product Search:** Customers can search for products by name, category, and price.
+- **Product Search:** Customers can search for products by name.
 - **Shopping Cart:** Customers can add products to their shopping cart and proceed to checkout for purchases.
 
 ### For Administrators
 - **Product Management:** Admins can add, edit, and delete product listings.
-- **Employee Management:** Admins can add and manage employee roles within the system.
-- **Transaction Oversight:** Admins have access to all customer transactions for effective monitoring and management.
+- **Employee Management:** Admins can add and manage employees within the system.
+- **Transaction Oversight:** Admins can view customer transactions for effective monitoring and management.
 
 ### Operational Efficiency
 - Automates inventory and transaction tracking, improving operational efficiency by up to 30%.
