@@ -7,7 +7,7 @@
 </head>
 <body>
     <div class="container text-center" style="margin-top: 100px;">
-        <h1>Welcome to Grocery2</h1>
+        <h1>Welcome to SMART</h1>
         <p>Select an option to proceed:</p>
         <a href="signup.php" class="btn btn-primary btn-lg">Signup</a>
         <a href="login.php" class="btn btn-secondary btn-lg">Login</a>
